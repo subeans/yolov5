@@ -1,27 +1,21 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
-
 Format                      | `export.py --include`         | Model
 ---                         | ---                           | ---
 PyTorch                     | -                             | yolov5s.pt
-ONNX                        | `onnx`                        | yolov5s.onnx
 TensorRT                    | `engine`                      | yolov5s.engine
 TensorFlow SavedModel       | `saved_model`                 | yolov5s_saved_model/
 TensorFlow GraphDef         | `pb`                          | yolov5s.pb
-
 Requirements:
     $ pip3 install torch==1.10.1+cu102 torchvision==0.11.2+cu102 torchaudio==0.10.1 -f https://download.pytorch.org/whl/torch_stable.htmlpip3 install opencv-python
   # GPU
-
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include saved_model engine
-
 Inference:
     $ python path/to/detect.py --weights yolov5s_saved_model        # TensorFlow SavedModel
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.engine             # TensorRT
-
 """
 
 import argparse
@@ -58,11 +52,10 @@ def export_formats():
     # YOLOv5 export formats
     x = [
         ['PyTorch', '-', '.pt', True],
-        ['ONNX', 'onnx', '.onnx', True],
         ['TensorRT', 'engine', '.engine', True],
         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
         ['TensorFlow GraphDef', 'pb', '.pb', True],
-        ['TensorFlow Lite', 'tflite', '.tflite', False],]
+        ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
 
@@ -294,6 +287,7 @@ def run(
     include = [x.lower() for x in include]  # to lowercase
     fmts = tuple(export_formats()['Argument'][1:])  # --include arguments
     flags = [x in include for x in fmts]
+    print(flags)
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
     engine, saved_model, pb = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
@@ -318,7 +312,7 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    if half and not coreml and not xml:
+    if half :
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
@@ -395,7 +389,7 @@ def parse_opt():
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include',
                         nargs='+',
-                        default=['torchscript', 'onnx'],
+                        default=['saved_model'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
     opt = parser.parse_args()
     print_args(vars(opt))
